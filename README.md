@@ -126,6 +126,7 @@ and enables audit logging — all in a single automated run.
 - Git / GitHub / GitLab
 
 ## Repository Structure
+```
 container-orchestration-lab/
 ├── app.py                    # Python web application
 ├── Dockerfile                # Container image definition
@@ -136,6 +137,7 @@ container-orchestration-lab/
 │   ├── inventory.ini         # Ansible inventory file
 │   └── security-hardening.yml # Security hardening playbook
 └── README.md
+```
 
 ## Prerequisites
 - Docker Desktop
