@@ -1,0 +1,50 @@
+# Deployment tells Kubernetes how to run your app
+# It maintains the desired number of running pods at all times
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swooplab-deployment
+  labels:
+    app: swooplab
+spec:
+  # Keep 3 copies of the pod running at all times
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swooplab
+  template:
+    metadata:
+      labels:
+        app: swooplab
+    spec:
+      containers:
+      - name: swooplab
+        image: swooplab:v1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_ENV
+          value: "production"
+        # Resource limits prevent one container from using all available resources
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        # Liveness probe - restart container if it stops responding
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        # Readiness probe - only send traffic when container is ready
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10

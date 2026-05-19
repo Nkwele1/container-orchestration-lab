@@ -1,0 +1,17 @@
+# Service gives your pods a stable network address
+# Without this pods are unreachable from outside the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: swooplab-service
+spec:
+  # NodePort exposes the service on a port on each node
+  # This lets you access it from outside the cluster
+  type: NodePort
+  selector:
+    app: swooplab
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+    nodePort: 30080
