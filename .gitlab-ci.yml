@@ -24,10 +24,14 @@ validate-dockerfile:
 # Job 2: Validate Kubernetes manifests
 validate-kubernetes:
   stage: validate
-  image: bitnami/kubectl:latest
+  image: 
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
   script:
+    - echo "Validating Kubernetes manifests..."
     - kubectl apply --dry-run=client -f deployment.yaml
     - kubectl apply --dry-run=client -f service.yaml
+    - echo "Kubernetes validation complete"
   allow_failure: true
 
 # Job 3: Build the Docker image
