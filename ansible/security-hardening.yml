@@ -1,0 +1,134 @@
+---
+# Ansible Security Hardening Playbook
+# Applies security baseline configurations to Linux servers
+# Mirrors the kind of hardening required for NIST and STIG compliance
+
+- name: Security Hardening Playbook
+  hosts: local
+  become: yes
+  vars:
+    # Define hardening variables
+    max_login_attempts: 3
+    password_min_length: 14
+    log_retention_days: 90
+
+  tasks:
+
+    # Task 1: Update all packages
+    - name: Update all packages to latest version
+      apt:
+        upgrade: dist
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    # Task 2: Install security tools
+    - name: Install security tools
+      apt:
+        name:
+          - fail2ban
+          - ufw
+          - auditd
+          - unattended-upgrades
+        state: present
+        update_cache: yes
+
+    # Task 3: Configure automatic security updates
+    - name: Enable automatic security updates
+      copy:
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+          APT::Periodic::AutocleanInterval "7";
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        mode: '0644'
+
+    # Task 4: Configure UFW firewall
+    - name: Set UFW default deny incoming
+      ufw:
+        default: deny
+        direction: incoming
+
+    - name: Set UFW default allow outgoing
+      ufw:
+        default: allow
+        direction: outgoing
+
+    - name: Enable UFW firewall
+      ufw:
+        state: enabled
+
+    # Task 5: Configure fail2ban to block brute force
+    - name: Configure fail2ban
+      copy:
+        content: |
+          [DEFAULT]
+          bantime = 3600
+          findtime = 600
+          maxretry = {{ max_login_attempts }}
+
+          [sshd]
+          enabled = true
+          port = ssh
+          logpath = /var/log/auth.log
+        dest: /etc/fail2ban/jail.local
+        mode: '0644'
+
+    - name: Start and enable fail2ban
+      service:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    # Task 6: Harden SSH configuration
+    - name: Harden SSH configuration
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      loop:
+        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^#?X11Forwarding', line: 'X11Forwarding no' }
+        - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries {{ max_login_attempts }}' }
+        - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
+        - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 2' }
+      when: ansible_connection != "local"
+
+    # Task 7: Set password policy
+    - name: Set minimum password length
+      lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: '^#?minlen'
+        line: 'minlen = {{ password_min_length }}'
+        create: yes
+
+    # Task 8: Configure audit logging
+    - name: Start and enable auditd
+      service:
+        name: auditd
+        state: started
+        enabled: yes
+      when: ansible_connection != "local"
+
+    # Task 9: Create security report
+    - name: Generate security configuration report
+      shell: |
+        echo "=== Security Hardening Report ===" > /tmp/security-report.txt
+        echo "Date: $(date)" >> /tmp/security-report.txt
+        echo "Hostname: $(hostname)" >> /tmp/security-report.txt
+        echo "UFW Status:" >> /tmp/security-report.txt
+        ufw status >> /tmp/security-report.txt
+        echo "Fail2ban Status:" >> /tmp/security-report.txt
+        fail2ban-client status >> /tmp/security-report.txt
+        echo "=== Report Complete ===" >> /tmp/security-report.txt
+      args:
+        executable: /bin/bash
+
+    - name: Display security report
+      command: cat /tmp/security-report.txt
+      register: report
+
+    - name: Show report
+      debug:
+        msg: "{{ report.stdout_lines }}"
