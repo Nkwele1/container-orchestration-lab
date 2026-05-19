@@ -68,7 +68,9 @@ test-container:
 # Job 5: Security scan with Trivy
 security-scan:
   stage: security
-  image: aquasec/trivy:latest
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
   script:
     - echo "Running Trivy vulnerability scan..."
     - trivy image --exit-code 0 --severity HIGH,CRITICAL python:3.11-slim
