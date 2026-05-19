@@ -45,7 +45,7 @@ self-healing by deleting a pod and watching it automatically restart.
 - Resource requests and limits enforcing compute boundaries per pod
 - Liveness and readiness probes for health-based traffic routing
 - NodePort service exposing the app within the cluster
-- Self-healing demonstration — deleted pod replaced within seconds
+- Self-healing demonstration - deleted pod replaced within seconds
 - Load balancing across replicas verified via hostname changes
 
 ### Phase 3: Prometheus and Grafana Monitoring
@@ -100,7 +100,7 @@ servers at the same time. This phase writes that recipe for security hardening.
 **What was built:**
 An Ansible playbook that automatically applies a security baseline to Linux servers. 
 The playbook installs security tools, configures firewall rules, hardens authentication, 
-and enables audit logging — all in a single automated run.
+and enables audit logging - all in a single automated run.
 
 - Automated package updates to latest security patches
 - fail2ban installation and configuration blocking brute force after 3 attempts
@@ -109,7 +109,7 @@ and enables audit logging — all in a single automated run.
 - Password policy enforcement with minimum 14 character length
 - SSH hardening disabling root login and password authentication
 - auditd configuration for system level audit logging
-- Idempotent design — safe to run multiple times without side effects
+- Idempotent design - safe to run multiple times without side effects
 
 ## Technologies Used
 - Python 3.11
@@ -175,10 +175,10 @@ container-orchestration-lab/
     ansible-playbook -i inventory.ini security-hardening.yml
 
 ## Compliance Alignment
-- NIST 800-53 CM-6 — Configuration Settings
-- NIST 800-53 AC-6 — Least Privilege
-- NIST 800-53 AU-2 — Audit Events
-- NIST 800-53 SI-2 — Flaw Remediation
+- NIST 800-53 CM-6 - Configuration Settings
+- NIST 800-53 AC-6 - Least Privilege
+- NIST 800-53 AU-2 - Audit Events
+- NIST 800-53 SI-2 - Flaw Remediation
 - CIS Benchmark hardening principles
 - Zero Trust Architecture principles
 
