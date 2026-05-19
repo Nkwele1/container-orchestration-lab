@@ -1,0 +1,73 @@
+# GitLab CI/CD Pipeline for Container Orchestration Lab
+# This pipeline runs automatically on every push
+# Mirrors the CI/CD workflow used in production DevSecOps environments
+
+stages:
+  - validate
+  - build
+  - test
+  - security
+
+# Variables available to all jobs
+variables:
+  IMAGE_NAME: swooplab
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+
+# Job 1: Validate the Dockerfile
+validate-dockerfile:
+  stage: validate
+  image: hadolint/hadolint:latest-debian
+  script:
+    - hadolint Dockerfile
+  allow_failure: true
+
+# Job 2: Validate Kubernetes manifests
+validate-kubernetes:
+  stage: validate
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl apply --dry-run=client -f deployment.yaml
+    - kubectl apply --dry-run=client -f service.yaml
+  allow_failure: true
+
+# Job 3: Build the Docker image
+build-image:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker build -t $IMAGE_NAME:latest .
+    - echo "Build complete - Image tagged as $IMAGE_NAME:$IMAGE_TAG"
+  artifacts:
+    reports:
+      dotenv: build.env
+
+# Job 4: Test the container
+test-container:
+  stage: test
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - echo "Starting container for testing..."
+    - docker build -t $IMAGE_NAME:test .
+    - docker run -d --name test-container -p 8080:8080 $IMAGE_NAME:test
+    - sleep 10
+    - docker exec test-container python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8080')" 
+    - echo "Health check passed"
+    - docker stop test-container
+    - docker rm test-container
+    - echo "Container test complete"
+
+# Job 5: Security scan with Trivy
+security-scan:
+  stage: security
+  image: aquasec/trivy:latest
+  script:
+    - echo "Running Trivy vulnerability scan..."
+    - trivy image --exit-code 0 --severity HIGH,CRITICAL python:3.11-slim
+    - echo "Security scan complete"
+  allow_failure: true
